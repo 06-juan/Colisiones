@@ -1,0 +1,14 @@
+.venv/
+
+# Ignorar archivos específicos de compilación
+*.pyc
+*.pyo
+__pycache__/
+
+# Ignorar archivos de configuración de IDEs o editores
+.vscode/
+.idea/
+
+# Ignorar archivos temporales
+*.log
+*.bak
