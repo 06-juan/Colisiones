@@ -27,7 +27,7 @@ class Objeto:
         
         Parámetros:
             masa: masa del objeto.
-            direccion: vector de velocidad (vx, vy). Si se da solo 1 o 2 componentes, se utiliza tal cual.
+            direccion: vector de velocidad (vx, vy).
             origen: posición inicial (x, y).
         """
         # Convertir a tupla (en 2D se esperan 2 componentes)
@@ -107,6 +107,35 @@ class ColisionElastica(Colision):
         return (f"Colisión elástica:\nObjeto 1 velocidad final = {self.__velocidad_final_obj1[0]:.3},{self.__velocidad_final_obj1[1]:.3}\n"
                 f"Objeto 2 velocidad final = {self.__velocidad_final_obj2[0]:.3},{self.__velocidad_final_obj2[1]:.3}")
 
+class ColisionInlastica(Colision):
+    def __init__(self, obj1: Objeto, obj2: Objeto):
+        """
+        Calcula las velocidades post-colisión para una colisión elástica en 2D,
+        aplicando las fórmulas unidimensionales en cada componente.
+        """
+        m1, m2 = obj1.masa, obj2.masa
+        self.__masa_final = m1 + m2
+        v1 = obj1.direccion
+        v2 = obj2.direccion
+        # Fórmula para velocidad final del objeto 1
+        self.__velocidad_final_obj1 = (
+            ((m1*v1[0] + m2*v2[0]) / (m1 + m2)),
+            ((m1*v1[1] + m2*v2[1]) / (m1 + m2))
+        )
+
+    @property
+    def velocidad_final_obj1(self):
+        return self.__velocidad_final_obj1
+    
+    @property
+    def masa_final(self):
+        return self.__masa_final
+
+
+    def __str__(self):
+        return (f"Colisión elástica:\nObjeto 1 velocidad final = {self.__velocidad_final_obj1[0]:.3},{self.__velocidad_final_obj1[1]:.3}\n"
+                f"Con una masa total de {self.__masa_final}")
+
 # -------------------------------
 # Función numérica para determinar el instante de colisión en 2D
 @timing
@@ -159,12 +188,19 @@ def simular_colision_static():
         return
     print(f"Colisión detectada en t = {t_col:.3f} s, en la posición ({pos_col[0]:.3f}, {pos_col[1]:.3f})")
 
-    
-    # Calcular velocidades post-colisión utilizando colisión elástica
-    col_elastica = ColisionElastica(obj1, obj2)
-    print(col_elastica)
-    v1_final = col_elastica.velocidad_final_obj1
-    v2_final = col_elastica.velocidad_final_obj2
+    # Modificación clave: Usar una variable única para la colisión
+    tipo_colision = "inelastica"  # Cambiar entre "elastica" "inelastica" si se desea
+
+    if tipo_colision == "elastica":
+        colision = ColisionElastica(obj1, obj2)
+        v1_final = colision.velocidad_final_obj1
+        v2_final = colision.velocidad_final_obj2
+    else:
+        colision = ColisionInlastica(obj1, obj2)
+        v1_final = colision.velocidad_final_obj1
+        v2_final = v1_final  # En inelástica, ambos objetos tienen la misma velocidad
+
+    print(colision)
     
     # Crear la gráfica 2D
     fig, ax = plt.subplots(figsize=(8, 6)) #fig es el lienzo y ax son los ejes
@@ -194,15 +230,22 @@ def simular_colision_static():
     ax.scatter(pos_col[0], pos_col[1], color='magenta', s=100, label="Punto de Colisión")
     
     # Dibujar los vectores de velocidad post-colisión (desde el punto de colisión)
-    ax.quiver(pos_col[0], pos_col[1],
-              v1_final[0], v1_final[1],
-              angles='xy', scale_units='xy', scale=escala,
-              color='orange', width=0.005, label="Vel. Post-colisión Objeto 1")
-    ax.quiver(pos_col[0], pos_col[1],
-              v2_final[0], v2_final[1],
-              angles='xy', scale_units='xy', scale=escala,
-              color='cyan', width=0.005, label="Vel. Post-colisión Objeto 2")
-    
+
+    if tipo_colision == "elastica":
+        ax.quiver(pos_col[0], pos_col[1],
+                v1_final[0], v1_final[1],
+                angles='xy', scale_units='xy', scale=escala,
+                color='orange', width=0.005, label="Vel. Post-colisión Objeto 1")
+        ax.quiver(pos_col[0], pos_col[1],
+                v2_final[0], v2_final[1],
+                angles='xy', scale_units='xy', scale=escala,
+                color='cyan', width=0.005, label="Vel. Post-colisión Objeto 2")
+    else:
+        ax.quiver(pos_col[0], pos_col[1],
+                v1_final[0], v1_final[1],
+                angles='xy', scale_units='xy', scale=escala,
+                color='orange', width=0.005, label="Vel. Post-colisión (Fusión)")
+
     ax.legend()
     plt.show()
 
